@@ -173,6 +173,32 @@ func (c *RTUClient) transaction(request []byte) ([]byte, error) {
 	// 等待发送完成
 	txTime := time.Duration(len(requestWithCRC)*11*1000000/c.config.BaudRate) * time.Microsecond
 	time.Sleep(txTime + 2*time.Millisecond)
+	
+	// RS485回显处理：读取并丢弃发送的数据
+	echoBuffer := make([]byte, len(requestWithCRC))
+	echoDeadline := time.Now().Add(50 * time.Millisecond)
+	totalEchoRead := 0
+	for totalEchoRead < len(requestWithCRC) && time.Now().Before(echoDeadline) {
+		n, err := c.port.Read(echoBuffer[totalEchoRead:])
+		if n > 0 {
+			totalEchoRead += n
+			if c.config.Debug {
+				log.Printf("[Modbus RTU] Echo discarded: % 02X (%d/%d bytes)", 
+					echoBuffer[:totalEchoRead], totalEchoRead, len(requestWithCRC))
+			}
+		}
+		if err != nil && !isTimeout(err) && err != io.EOF {
+			// 读取错误，但不影响继续（可能没有回显）
+			break
+		}
+		if totalEchoRead >= len(requestWithCRC) {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+
+	// 短暂延迟，等待实际响应开始到达
+	time.Sleep(10 * time.Millisecond)
 
 	// 读取响应
 	response, err := c.readResponse(request[1])

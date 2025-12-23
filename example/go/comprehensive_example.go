@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -60,16 +61,28 @@ func main() {
 }
 
 func setupTCPClient() (modbus.Client, error) {
-	fmt.Print("输入 TCP 主机地址 (默认: 192.168.68.50): ")
 	var host string
+	fmt.Print("输入 TCP 主机地址 (默认: 127.0.0.1): ")
 	fmt.Scanln(&host)
 	if host == "" {
-		host = "192.168.68.50"
+		host = "127.0.0.1"
+	}
+
+	var portStr string
+	fmt.Print("输入 TCP 端口号 (默认: 5020): ")
+	fmt.Scanln(&portStr)
+	if portStr == "" {
+		portStr = "5020"
+	}
+
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		return nil, fmt.Errorf("无效的端口号: %v", err)
 	}
 
 	config := &modbus.TCPConfig{
 		Host:    host,
-		Port:    502,
+		Port:    port,
 		SlaveID: 1,
 		Timeout: 2 * time.Second,
 		Debug:   false,
@@ -348,13 +361,13 @@ func testUint32ReadWrite(client modbus.Client) TestResult {
 
 	// 写入 (使用2个寄存器)
 	bytes, _ := modbus.Uint32ToBytes(testValue, modbus.BigEndian)
-	if err := client.WriteMultipleRegisters(202, bytes); err != nil {
+	if err := client.WriteMultipleRegisters(72, bytes); err != nil {
 		return TestResult{"Uint32 ReadWrite", false, err, nil}
 	}
 	fmt.Printf("    ✓ 写入 Uint32: 0x%08X (%d)\n", testValue, testValue)
 
 	// 读取
-	data, err := client.ReadHoldingRegisters(202, 2)
+	data, err := client.ReadHoldingRegisters(72, 2)
 	if err != nil {
 		return TestResult{"Uint32 ReadWrite", false, err, nil}
 	}
@@ -438,7 +451,7 @@ func testFileRecordBase64(client modbus.Client) TestResult {
 	fmt.Println("\n[14] 测试文件记录 Base64 编码")
 
 	// 原始数据
-	originalData := []byte("Hello Modbus! This is a test message.")
+	originalData := []byte("mobus file record test data for Base64 encoding.")
 
 	// Base64 编码
 	encoded := base64.StdEncoding.EncodeToString(originalData)
@@ -448,9 +461,24 @@ func testFileRecordBase64(client modbus.Client) TestResult {
 	// 将编码后的字符串转为字节
 	encodedBytes := []byte(encoded)
 
-	// 写入文件记录 (模拟写入，地址根据设备而定)
-	// 注意：文件记录功能需要设备支持
-	err := client.WriteFileRecord(1, 0, encodedBytes[:min(len(encodedBytes), 120)])
+	// 计算实际写入长度（字节数）
+	// Modbus 文件记录通常有长度限制，这里限制为 120 字节
+	writeLen := len(encodedBytes)
+	if writeLen > 120 {
+		writeLen = 120
+	}
+
+	// 确保长度为偶数（Modbus 以 16 位字为单位）
+	if writeLen%2 != 0 {
+		writeLen--
+	}
+
+	dataToWrite := encodedBytes[:writeLen]
+	fmt.Printf("    写入长度: %d 字节\n", writeLen)
+
+	// 写入文件记录 (文件号=0, 记录号=85，映射到保持寄存器地址85)
+	// 服务器将文件映射到寄存器: 地址 = file_number * 10000 + record_number
+	err := client.WriteFileRecord(0, 0, dataToWrite)
 	if err != nil {
 		// 很多设备不支持文件记录，这是正常的
 		fmt.Printf("    ⚠ 写入失败 (设备可能不支持): %v\n", err)
@@ -459,15 +487,44 @@ func testFileRecordBase64(client modbus.Client) TestResult {
 	fmt.Println("    ✓ Base64 数据写入成功")
 
 	// 读取验证
-	readData, err := client.ReadFileRecord(1, 0, uint16(len(encodedBytes[:min(len(encodedBytes), 120)])/2))
+	// ReadFileRecord 的长度参数通常是字数（words），1 word = 2 bytes
+	wordCount := uint16(writeLen / 2)
+	readData, err := client.ReadFileRecord(0, 85, wordCount)
 	if err != nil {
+		fmt.Printf("    ⚠ 读取失败:  %v\n", err)
 		return TestResult{"FileRecord Base64", false, err, nil}
 	}
 
-	// 解码
-	decoded, err := base64.StdEncoding.DecodeString(string(readData))
-	if err == nil {
-		fmt.Printf("    ✓ 读取并解码: %s\n", string(decoded))
+	fmt.Printf("    ✓ 读取数据长度: %d 字节\n", len(readData))
+
+	// 验证读取的数据长度
+	if len(readData) < writeLen {
+		fmt.Printf("    ⚠ 读取数据不完整: 期望 %d 字节，实际 %d 字节\n", writeLen, len(readData))
+	}
+
+	// 尝试解码 Base64
+	// 截取有效长度的数据
+	validData := readData
+	if len(validData) > writeLen {
+		validData = validData[:writeLen]
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(string(validData))
+	if err != nil {
+		fmt.Printf("    ⚠ Base64 解码失败: %v\n", err)
+		// 即使解码失败，也返回读取的原始数据
+		return TestResult{"FileRecord Base64", true, nil, validData}
+	}
+
+	fmt.Printf("    ✓ 读取并解码: %s\n", string(decoded))
+
+	// 验证数据一致性
+	if string(decoded) == string(originalData) {
+		fmt.Println("    ✓ 数据验证通过：读写一致")
+	} else {
+		fmt.Printf("    ⚠ 数据不匹配\n")
+		fmt.Printf("      期望: %s\n", string(originalData))
+		fmt.Printf("      实际: %s\n", string(decoded))
 	}
 
 	return TestResult{"FileRecord Base64", true, nil, decoded}

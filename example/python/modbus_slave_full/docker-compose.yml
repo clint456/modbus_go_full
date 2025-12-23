@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  modbus-server:
+    build: .
+    container_name: modbus-server
+    ports:
+      - "5020:5020"  # Modbus TCP 端口
+      - "8080:8080"  # Web 控制台端口
+    volumes:
+      - ./config.yaml:/app/config.yaml
+      - ./modbus_data.json:/app/modbus_data.json
+      - ./logs:/app/logs
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - modbus-network
+
+networks:
+  modbus-network:
+    driver: bridge

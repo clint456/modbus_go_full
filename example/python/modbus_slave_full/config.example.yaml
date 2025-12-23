@@ -1,0 +1,45 @@
+# Modbus 服务器配置文件
+
+server:
+  tcp:
+    enabled: true
+    host: "0.0.0.0"
+    port: 5020
+  rtu:
+    enabled: false
+    port: "/dev/ttyUSB0"
+    baudrate: 9600
+    bytesize: 8
+    parity: "N"
+    stopbits: 1
+    timeout: 1.0
+
+slaves:
+  - id: 1
+    name: "主设备"
+    coils: 100
+    discrete_inputs: 100
+    holding_registers: 100
+    input_registers: 100
+
+web:
+  enabled: true
+  host: "0.0.0.0"
+  port: 8080
+  auth:
+    enabled: true
+    username: "admin"
+    password: "admin123"  # 生产环境应使用哈希存储
+
+data:
+  auto_save: true
+  save_interval: 60  # 秒
+  data_file: "modbus_data.json"
+  history_enabled: true
+  history_max_size: 1000
+
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  file: "modbus_server.log"
+  max_size: 10485760  # 10MB
+  backup_count: 5

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modbus 服务器控制台</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔌 Modbus 服务器控制台</h1>
+            <div class="header-controls">
+                <button id="theme-toggle" class="btn btn-secondary">🌙 暗黑模式</button>
+                <span id="connection-status" class="status disconnected">未连接</span>
+            </div>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="data">数据监控</button>
+            <button class="tab-btn" data-tab="file-records">📁 文件记录</button>
+            <button class="tab-btn" data-tab="history">历史记录</button>
+            <button class="tab-btn" data-tab="stats">统计信息</button>
+            <button class="tab-btn" data-tab="config">⚙️ 配置</button>
+        </nav>
+
+        <main>
+            <!-- 数据监控标签页 -->
+            <div id="data-tab" class="tab-content active">
+                <div class="controls">
+                    <label>
+                        从站 ID:
+                        <select id="slave-select">
+                            <option value="">加载中...</option>
+                        </select>
+                    </label>
+                    <button id="refresh-btn" class="btn btn-primary">🔄 刷新</button>
+                </div>
+
+                <div class="data-sections">
+                    <section class="data-section">
+                        <h2>线圈 (Coils)</h2>
+                        <div class="data-grid" id="coils-grid"></div>
+                    </section>
+
+                    <section class="data-section">
+                        <h2>离散输入 (Discrete Inputs)</h2>
+                        <div class="data-grid" id="discrete-inputs-grid"></div>
+                    </section>
+
+                    <section class="data-section">
+                        <h2>保持寄存器 (Holding Registers)</h2>
+                        <div class="data-grid" id="holding-registers-grid"></div>
+                    </section>
+
+                    <section class="data-section">
+                        <h2>输入寄存器 (Input Registers)</h2>
+                        <div class="data-grid" id="input-registers-grid"></div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- 文件记录标签页 -->
+            <div id="file-records-tab" class="tab-content">
+                <div class="file-records-container">
+                    <!-- 左侧：操作区 -->
+                    <div class="file-records-panel">
+                        <div class="panel-header">
+                            <h2>📁 文件记录操作</h2>
+                            <p class="panel-desc">文件记录映射到保持寄存器，支持 FC20(读) 和 FC21(写)</p>
+                        </div>
+
+                        <!-- 读取文件记录 -->
+                        <section class="operation-section">
+                            <h3>📖 读取文件记录 (FC20)</h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>从站 ID:</label>
+                                    <input type="number" id="read-slave-id" value="1" min="1" max="247">
+                                </div>
+                                <div class="form-group">
+                                    <label>文件编号:</label>
+                                    <input type="number" id="read-file-number" value="0" min="0" max="9">
+                                </div>
+                                <div class="form-group">
+                                    <label>记录编号:</label>
+                                    <input type="number" id="read-record-number" value="0" min="0" max="9999">
+                                </div>
+                                <div class="form-group">
+                                    <label>记录长度:</label>
+                                    <input type="number" id="read-record-length" value="5" min="1" max="100">
+                                </div>
+                            </div>
+                            <button id="read-file-record-btn" class="btn btn-primary btn-block">🔍 读取</button>
+                        </section>
+
+                        <!-- 写入文件记录 -->
+                        <section class="operation-section">
+                            <h3>✍️ 写入文件记录 (FC21)</h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>从站 ID:</label>
+                                    <input type="number" id="write-slave-id" value="1" min="1" max="247">
+                                </div>
+                                <div class="form-group">
+                                    <label>文件编号:</label>
+                                    <input type="number" id="write-file-number" value="0" min="0" max="9">
+                                </div>
+                                <div class="form-group">
+                                    <label>记录编号:</label>
+                                    <input type="number" id="write-record-number" value="0" min="0" max="9999">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>数据值 (逗号分隔):</label>
+                                <input type="text" id="write-data-values" placeholder="例: 100,200,300" value="100,200,300">
+                            </div>
+                            <button id="write-file-record-btn" class="btn btn-success btn-block">💾 写入</button>
+                        </section>
+
+                        <!-- 写入字符串 -->
+                        <section class="operation-section">
+                            <h3>📝 写入字符串</h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>从站 ID:</label>
+                                    <input type="number" id="string-slave-id" value="1" min="1" max="247">
+                                </div>
+                                <div class="form-group">
+                                    <label>起始地址:</label>
+                                    <input type="number" id="string-address" value="0" min="0" max="99">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>字符串内容:</label>
+                                <input type="text" id="string-text" placeholder="输入要写入的字符串" value="Hello Modbus!">
+                                <small class="text-muted">每2个字符占用1个寄存器（16位）</small>
+                            </div>
+                            <button id="write-string-btn" class="btn btn-info btn-block">📤 写入字符串</button>
+                        </section>
+
+                        <!-- 读取字符串 -->
+                        <section class="operation-section">
+                            <h3>📖 读取字符串</h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>从站 ID:</label>
+                                    <input type="number" id="read-string-slave-id" value="1" min="1" max="247">
+                                </div>
+                                <div class="form-group">
+                                    <label>起始地址:</label>
+                                    <input type="number" id="read-string-address" value="0" min="0" max="99">
+                                </div>
+                                <div class="form-group">
+                                    <label>长度(寄存器数):</label>
+                                    <input type="number" id="read-string-length" value="10" min="1" max="50">
+                                </div>
+                            </div>
+                            <button id="read-string-btn" class="btn btn-primary btn-block">📥 读取字符串</button>
+                        </section>
+
+                        <!-- 操作结果 -->
+                        <section class="operation-section">
+                            <h3>📊 操作结果</h3>
+                            <div id="file-record-result" class="result-box">
+                                <p class="text-muted">等待操作...</p>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- 右侧：可视化区 -->
+                    <div class="file-records-visual">
+                        <div class="panel-header">
+                            <h2>🗺️ 文件记录映射</h2>
+                            <p class="panel-desc">文件记录如何映射到保持寄存器</p>
+                        </div>
+
+                        <div class="mapping-diagram">
+                            <div class="mapping-item">
+                                <div class="mapping-label">文件记录请求</div>
+                                <div class="mapping-box file-record-box">
+                                    <div class="box-title">📁 文件记录参数</div>
+                                    <div class="param-list">
+                                        <div class="param-item">
+                                            <span class="param-name">文件编号:</span>
+                                            <span class="param-value" id="visual-file-number">-</span>
+                                        </div>
+                                        <div class="param-item">
+                                            <span class="param-name">记录编号:</span>
+                                            <span class="param-value" id="visual-record-number">-</span>
+                                        </div>
+                                        <div class="param-item">
+                                            <span class="param-name">记录长度:</span>
+                                            <span class="param-value" id="visual-record-length">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mapping-arrow">⬇️</div>
+
+                            <div class="mapping-item">
+                                <div class="mapping-label">映射到保持寄存器</div>
+                                <div class="mapping-box register-box">
+                                    <div class="box-title">📊 保持寄存器</div>
+                                    <div class="register-info">
+                                        <div class="info-row">
+                                            <span>起始地址:</span>
+                                            <span class="value" id="visual-start-address">-</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span>结束地址:</span>
+                                            <span class="value" id="visual-end-address">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mapping-arrow">⬇️</div>
+
+                            <div class="mapping-item">
+                                <div class="mapping-label">数据内容</div>
+                                <div class="mapping-box data-box">
+                                    <div class="box-title">📦 寄存器数据</div>
+                                    <div id="visual-data-grid" class="visual-data-grid">
+                                        <p class="text-muted">执行操作后显示</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 说明信息 -->
+                        <div class="info-panel">
+                            <h4>💡 工作原理</h4>
+                            <ul class="info-list">
+                                <li><strong>FC20 (读文件记录):</strong> 从指定的文件记录位置读取数据，实际读取保持寄存器</li>
+                                <li><strong>FC21 (写文件记录):</strong> 向指定的文件记录位置写入数据，实际写入保持寄存器</li>
+                                <li><strong>映射关系:</strong> 记录编号 = 保持寄存器地址，记录长度 = 读写的寄存器数量</li>
+                                <li><strong>文件编号:</strong> 用于逻辑分组，不影响实际地址（本实现中文件编号为0-9）</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 历史记录标签页 -->
+            <div id="history-tab" class="tab-content">
+                <div class="controls">
+                    <button id="clear-history-btn" class="btn btn-danger">🗑️ 清空</button>
+                    <button id="export-history-btn" class="btn btn-secondary">📥 导出</button>
+                </div>
+                <div id="history-list" class="history-list"></div>
+            </div>
+
+            <!-- 统计信息标签页 -->
+            <div id="stats-tab" class="tab-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>总请求数</h3>
+                        <div class="stat-value" id="total-requests">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>成功请求数</h3>
+                        <div class="stat-value" id="successful-requests">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>成功率</h3>
+                        <div class="stat-value" id="success-rate">0%</div>
+                    </div>
+                </div>
+                <div class="function-codes">
+                    <h3>📊 功能码统计</h3>
+                    <div class="table-wrapper">
+                        <table id="function-codes-table">
+                            <thead>
+                                <tr>
+                                    <th>功能码</th>
+                                    <th>调用次数</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 配置标签页 -->
+            <div id="config-tab" class="tab-content">
+                <div class="card">
+                    <h2>⚙️ 从站配置管理</h2>
+                    
+                    <!-- 当前配置显示 -->
+                    <section class="mb-3">
+                        <h3>📊 当前配置</h3>
+                        <div id="current-config" class="config-display">
+                            <p class="text-muted">加载中...</p>
+                        </div>
+                        <button id="refresh-config-btn" class="btn btn-secondary">🔄 刷新配置</button>
+                    </section>
+
+                    <hr>
+
+                    <!-- 调整大小表单 -->
+                    <section>
+                        <h3>🔧 调整数据块大小</h3>
+                        <p class="text-muted">动态调整从站的数据块大小，保留已有数据</p>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>从站 ID:</label>
+                                <input type="number" id="resize-slave-id" value="1" min="1" max="247">
+                            </div>
+                        </div>
+
+                        <div class="form-grid" style="grid-template-columns: repeat(2, 1fr);">
+                            <div class="form-group">
+                                <label>线圈数量:</label>
+                                <input type="number" id="resize-coils" placeholder="保持当前" min="0" max="65536">
+                                <small class="text-muted">留空表示不修改</small>
+                            </div>
+                            <div class="form-group">
+                                <label>离散输入数量:</label>
+                                <input type="number" id="resize-discrete-inputs" placeholder="保持当前" min="0" max="65536">
+                                <small class="text-muted">留空表示不修改</small>
+                            </div>
+                            <div class="form-group">
+                                <label>保持寄存器数量:</label>
+                                <input type="number" id="resize-holding-registers" placeholder="保持当前" min="0" max="65536">
+                                <small class="text-muted">留空表示不修改</small>
+                            </div>
+                            <div class="form-group">
+                                <label>输入寄存器数量:</label>
+                                <input type="number" id="resize-input-registers" placeholder="保持当前" min="0" max="65536">
+                                <small class="text-muted">留空表示不修改</small>
+                            </div>
+                        </div>
+
+                        <button id="resize-btn" class="btn btn-warning btn-block">⚡ 应用更改</button>
+                        
+                        <div id="resize-result" class="result-box mt-3" style="display: none;"></div>
+                    </section>
+
+                    <hr>
+
+                    <!-- 使用说明 -->
+                    <section>
+                        <h3>💡 使用说明</h3>
+                        <ul class="info-list">
+                            <li><strong>实时生效:</strong> 调整后立即生效，无需重启服务器</li>
+                            <li><strong>数据保留:</strong> 扩大时保留原有数据，缩小时保留前N个数据</li>
+                            <li><strong>推荐值:</strong> 通常100-1000足够使用，最大支持65536</li>
+                            <li><strong>性能考虑:</strong> 数据块过大可能影响性能和内存使用</li>
+                            <li><strong>字符串存储:</strong> 每2个字符需要1个寄存器</li>
+                        </ul>
+                    </section>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Modbus TCP/RTU 服务器 v1.0.0 | 最后更新: <span id="last-update">-</span></p>
+        </footer>
+    </div>
+
+    <!-- 编辑对话框 -->
+    <div id="edit-dialog" class="dialog">
+        <div class="dialog-content">
+            <h3 id="edit-dialog-title">编辑值</h3>
+            <div class="form-group">
+                <label>地址: <span id="edit-address"></span></label>
+            </div>
+            <div class="form-group">
+                <label>
+                    新值:
+                    <input type="text" id="edit-value" />
+                </label>
+            </div>
+            <div class="dialog-actions">
+                <button id="edit-save-btn" class="btn btn-primary">保存</button>
+                <button id="edit-cancel-btn" class="btn btn-secondary">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

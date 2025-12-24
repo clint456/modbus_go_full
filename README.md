@@ -2,12 +2,12 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.18+-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Test Coverage](https://img.shields.io/badge/coverage-94.4%25-brightgreen.svg)](DESIGN.md)
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/clint456/modbus/releases)
+[![Test Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](DESIGN.md)
+[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/clint456/modbus/releases)
 
 纯 Go 实现的 Modbus 协议库，支持 RTU 和 TCP 两种模式。无需 RS485 ioctl 系统调用，可与 USB 转串口适配器无缝配合。
 
-**生产就绪 | 测试通过率 94.4% | 完整文档**
+**生产就绪 | 测试通过率 100% | 完整文档 | 配套工具**
 
 ## ✨ 核心特性
 
@@ -18,15 +18,21 @@
 - 📊 **完整功能码** - 支持 12 个标准 Modbus 功能码
 - 🧮 **多数据类型** - Uint16/Int16/Uint32/Int32/Float32
 - 🛡️ **线程安全** - 支持并发使用
-- ✅ **高测试覆盖** - 18 个测试用例，通过率 94.4%
+- ✅ **高测试覆盖** - 18 个测试用例，通过率 100%
+- 🛠️ **配套工具** - Python Modbus 服务器，支持 Web 界面和 24 个功能码
 - 📖 **完整文档** - 详细的设计文档和使用指南
-
+![alt text](QQ20251224-093841.png) ![alt text](QQ20251224-093904.png)
 ## 📊 测试状态
 
 | 模式 | 通过 | 总计 | 通过率 |
 |------|------|------|--------|
-| TCP  | 17   | 18   | 94.4%  |
-| RTU  | 17   | 18   | 94.4%  |
+| TCP  | 18   | 18   | 100%  |
+| RTU  | 18   | 18   | 100%  |
+
+**最新更新 (v0.2.0)**:
+- ✅ 修复 Uint32 测试地址超范围问题 (202→72)
+- ✅ 修复文件记录测试地址映射错误 (文件号1→0)
+- ✅ 所有测试现已通过，支持 0-99 寄存器范围（可扩展至 65536）
 
 查看 [完整测试报告](DESIGN.md#测试结果)
 
@@ -134,7 +140,72 @@ func main() {
 }
 ```
 
-更多示例请查看 [example](example/) 目录。
+更多示例请查看 [tools/modbus_poll_full](tools/modbus_poll_full/) 目录。
+
+## 🛠️ 配套工具
+
+### Modbus 测试服务器
+
+本项目包含完整的 Python Modbus 服务器实现，适用于开发和测试：
+
+**位置**: [tools/modbus_slave_full](tools/modbus_slave_full/)
+
+**特性**:
+- ✅ 支持 Modbus TCP 和 RTU 协议
+- ✅ 支持 24 个标准功能码 (FC01-24)
+- ✅ Web 控制台界面 (http://localhost:8080)
+- ✅ 字符串读写操作支持
+- ✅ 文件记录可视化
+- ✅ 动态配置管理（寄存器大小可调整 0-65536）
+- ✅ 实时数据监控和历史记录
+- ✅ 数据持久化 (JSON)
+
+**快速启动**:
+```bash
+cd tools/modbus_slave_full
+poetry install
+poetry run modbus-server
+
+# 访问 Web 界面
+# http://localhost:8080
+
+# Modbus TCP 端口: 5020
+```
+
+**测试脚本**:
+```bash
+# 字符串操作测试
+./test_string_operations.sh
+
+# 文件记录测试
+./test_file_records_practical.sh
+
+# 配置管理测试
+./test_config_management.sh
+
+# 全功能码测试 (FC01-24)
+python3 test_client.py
+```
+
+查看 [服务器文档](tools/modbus_slave_full/README.md) 了解更多信息。
+
+### Go 客户端测试工具
+
+**位置**: [tools/modbus_poll_full](tools/modbus_poll_full/)
+
+**特性**:
+- 综合测试程序，支持 18 个测试用例
+- 自动化测试脚本
+- 交互式测试模式
+
+**使用方法**:
+```bash
+cd tools/modbus_poll_full
+bash build.sh
+./test_auto.sh  # 自动化测试
+# 或
+./comprehensive_example.o  # 交互式测试
+```
 
 ## 📚 API 参考
 
@@ -187,8 +258,12 @@ type Client interface {
 | 0x10 | WriteMultipleRegisters | 写多个寄存器 | ✅ |
 | 0x07 | ReadExceptionStatus | 读取异常状态 | ✅ |
 | 0x0B | GetCommEventCounter | 获取通信事件计数 | ✅ |
-| 0x14 | ReadFileRecord | 读取文件记录 | ⚠️ 需设备支持 |
-| 0x15 | WriteFileRecord | 写入文件记录 | ⚠️ 需设备支持 |
+| 0x14 | ReadFileRecord | 读取文件记录 | ✅ 已修复 |
+| 0x15 | WriteFileRecord | 写入文件记录 | ✅ 已修复 |
+
+**注意**: 
+- FileRecord 功能需要服务器支持，使用文件号 0 进行测试
+- 服务器地址范围默认为 0-99，可动态扩展至 65536
 
 ### 支持的数据类型
 
@@ -283,20 +358,66 @@ if err != nil {
 
 ## 📝 更多示例
 
-查看 [example](example/) 目录获取完整示例：
+查看以下目录获取完整示例：
 
-- [tcp_example.go](example/tcp_example.go) - TCP 模式基础示例
-- [rtu_example.go](example/rtu_example.go) - RTU 模式基础示例
-- [comprehensive_example.go](example/comprehensive_example.go) - 综合测试程序
+### Go 客户端示例
+- [tools/modbus_poll_full/](tools/modbus_poll_full/) - Go 测试工具集
+  - `tcp_example.go` - TCP 模式基础示例
+  - `rtu_example.go` - RTU 模式基础示例
+  - `comprehensive_example.go` - 综合测试程序（18 个测试用例）
+  - `test_auto.sh` - 自动化测试脚本
+
+### Python 服务器示例
+- [tools/modbus_slave_full/](tools/modbus_slave_full/) - 完整的测试服务器
+  - 支持 24 个 Modbus 功能码
+  - Web 控制台界面
+  - 字符串操作支持
+  - 文件记录可视化
+  - 配置管理功能
 
 ## 🧪 测试
 
-运行综合测试程序：
+### 自动化测试（推荐）
 
 ```bash
-cd example
+# 1. 启动测试服务器
+cd tools/modbus_slave_full
+poetry install
+poetry run modbus-server &
+
+# 2. 运行 Go 客户端自动化测试
+cd tools/modbus_poll_full
+bash build.sh
+./test_auto.sh
+```
+
+### 交互式测试
+
+```bash
+cd tools/modbus_poll_full
 go run comprehensive_example.go
 ```
+
+### Python 服务器测试
+
+```bash
+cd tools/modbus_slave_full
+
+# 字符串操作测试
+./test_string_operations.sh
+
+# 文件记录测试
+./test_file_records_practical.sh
+
+# 全功能码测试 (FC01-24)
+python3 test_client.py
+```
+
+### Web 界面测试
+
+1. 启动服务器: `poetry run modbus-server`
+2. 打开浏览器: http://localhost:8080
+3. 切换到 "📁 文件记录" 标签测试字符串和文件记录功能
 
 ## 🔌 硬件兼容性
 
@@ -308,8 +429,44 @@ go run comprehensive_example.go
 
 ## 📖 文档
 
-- [DESIGN.md](DESIGN.md) - 完整设计文档
+- [DESIGN.md](DESIGN.md) - 完整设计文档和测试结果
 - [FILERECORD_TEST_GUIDE.md](FILERECORD_TEST_GUIDE.md) - FileRecord 功能测试指南
+- [tools/modbus_slave_full/README.md](tools/modbus_slave_full/README.md) - 测试服务器文档
+- [tools/modbus_slave_full/STRING_OPERATIONS_GUIDE.md](tools/modbus_slave_full/STRING_OPERATIONS_GUIDE.md) - 字符串操作指南
+- [tools/modbus_slave_full/FILE_RECORDS_GUIDE.md](tools/modbus_slave_full/FILE_RECORDS_GUIDE.md) - 文件记录功能指南
+- [tools/modbus_slave_full/CONFIG_MANAGEMENT_GUIDE.md](tools/modbus_slave_full/CONFIG_MANAGEMENT_GUIDE.md) - 配置管理指南
+
+## 🏗️ 项目结构
+
+```
+modbus_go_full/
+├── client.go                    # 客户端工厂
+├── tcp_client.go                # TCP 客户端实现
+├── rtu_client.go                # RTU 客户端实现
+├── protocol.go                  # 协议构建和解析
+├── types.go                     # 数据类型转换
+├── endianness.go                # 字节序处理
+├── errors.go                    # 错误定义
+├── modbus.go                    # 公共接口定义
+├── go.mod                       # Go 模块定义
+├── README.md                    # 本文档
+├── DESIGN.md                    # 设计文档
+└── tools/                       # 配套工具
+    ├── modbus_poll_full/        # Go 客户端测试工具
+    │   ├── comprehensive_example.go  # 综合测试程序
+    │   ├── tcp_example.go       # TCP 示例
+    │   ├── rtu_example.go       # RTU 示例
+    │   ├── build.sh             # 编译脚本
+    │   └── test_auto.sh         # 自动化测试
+    └── modbus_slave_full/       # Python 测试服务器
+        ├── modbus_slave_full/   # 服务器主包
+        ├── tests/               # 单元测试
+        ├── test_client.py       # 功能码测试客户端
+        ├── test_string_operations.sh
+        ├── test_file_records_practical.sh
+        ├── pyproject.toml       # Poetry 配置
+        └── README.md            # 服务器文档
+```
 
 ## 🔐 安全考虑
 
@@ -344,7 +501,28 @@ MIT License
 
 如有问题或建议，请提交 Issue。
 
+## 🆕 更新日志
+
+### v0.2.0 (2025-12-24)
+- ✅ 修复 Uint32 测试地址超范围问题
+- ✅ 修复文件记录测试地址映射错误
+- ✅ 所有 18 个测试用例现已通过 (100%)
+- 🆕 添加完整的 Python Modbus 测试服务器
+- 🆕 Web 控制台界面，支持实时监控
+- 🆕 字符串读写操作支持
+- 🆕 文件记录可视化功能
+- 🆕 动态配置管理（寄存器 0-65536）
+- 🆕 支持 24 个 Modbus 功能码 (FC01-24)
+- 📝 重组项目结构，tools/ 目录包含所有配套工具
+- 📝 更新文档和测试脚本
+
+### v0.1.0 (2025)
+- 🎉 初始版本发布
+- ✅ 支持 Modbus TCP 和 RTU
+- ✅ 12 个标准功能码
+- ✅ 多种数据类型和字节序支持
+
 ---
 
-**版本**: 0.1.0  
-**生产就绪** | **测试通过率 94.4%**
+**版本**: 0.2.0  
+**生产就绪** | **测试通过率 100%** | **配套工具齐全**

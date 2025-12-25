@@ -81,11 +81,11 @@ func setupTCPClient() (modbus.Client, error) {
 	}
 
 	config := &modbus.TCPConfig{
-		Host:    host,
-		Port:    port,
-		SlaveID: 1,
-		Timeout: 2 * time.Second,
-		Debug:   false,
+		Host:          host,
+		Port:          port,
+		SlaveID:       1,
+		MaxResponseMs: 2 * time.Second,
+		Debug:         false,
 	}
 
 	return modbus.NewTCPClient(config)
@@ -100,14 +100,14 @@ func setupRTUClient() (modbus.Client, error) {
 	}
 
 	config := &modbus.RTUConfig{
-		PortName: port,
-		BaudRate: 9600,
-		DataBits: 8,
-		StopBits: 1,
-		Parity:   "N",
-		SlaveID:  1,
-		Timeout:  2 * time.Second,
-		Debug:    false,
+		PortName:      port,
+		BaudRate:      9600,
+		DataBits:      8,
+		StopBits:      1,
+		Parity:        "N",
+		SlaveID:       1,
+		MaxResponseMs: 2 * time.Second,
+		Debug:         false,
 	}
 
 	return modbus.NewRTUClient(config)
@@ -148,7 +148,7 @@ func runAllTests(client modbus.Client) []TestResult {
 
 	// 6. 测试连接管理
 	results = append(results, testIsConnected(client))
-	results = append(results, testSetTimeout(client))
+	results = append(results, testSetMaxResponseMs(client))
 
 	return results
 }
@@ -563,15 +563,15 @@ func testIsConnected(client modbus.Client) TestResult {
 	return TestResult{"IsConnected", connected, nil, connected}
 }
 
-func testSetTimeout(client modbus.Client) TestResult {
-	fmt.Println("\n[18] 测试设置超时 (SetTimeout)")
-	client.SetTimeout(3 * time.Second)
+func testSetMaxResponseMs(client modbus.Client) TestResult {
+	fmt.Println("\n[18] 测试设置超时 (SetMaxResponseMs)")
+	client.SetMaxResponseMs(3 * time.Second)
 	fmt.Println("    ✓ 超时设置为 3 秒")
 
 	// 恢复默认超时
-	client.SetTimeout(2 * time.Second)
+	client.SetMaxResponseMs(2 * time.Second)
 	fmt.Println("    ✓ 恢复超时为 2 秒")
-	return TestResult{"SetTimeout", true, nil, nil}
+	return TestResult{"SetMaxResponseMs", true, nil, nil}
 }
 
 // ========== 测试报告 ==========

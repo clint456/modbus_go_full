@@ -2,7 +2,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.18+-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Test Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](DESIGN.md)
+[![Test Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](docs/DESIGN.md)
 [![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/clint456/modbus_go_full/releases)
 
 纯 Go 实现的 Modbus 协议库，支持 RTU 和 TCP 两种模式。无需 RS485 ioctl 系统调用，可与 USB 转串口适配器无缝配合。
@@ -21,7 +21,9 @@
 - ✅ **高测试覆盖** - 18 个测试用例，通过率 100%
 - 🛠️ **配套工具** - Python Modbus 服务器，支持 Web 界面和 24 个功能码
 - 📖 **完整文档** - 详细的设计文档和使用指南
-![alt text](QQ20251224-093841.png) ![alt text](QQ20251224-093904.png)
+
+![alt text](img/QQ20251224-093841.png)
+
 ## 📊 测试状态
 
 | 模式 | 通过 | 总计 | 通过率 |
@@ -34,7 +36,7 @@
 - ✅ 修复文件记录测试地址映射错误 (文件号1→0)
 - ✅ 所有测试现已通过，支持 0-99 寄存器范围（可扩展至 65536）
 
-查看 [完整测试报告](DESIGN.md#测试结果)
+查看 [完整测试报告](docs/DESIGN.md#测试结果)
 
 ## 📦 安装
 
@@ -66,7 +68,7 @@ func main() {
         Host:    "192.168.1.100",
         Port:    502,
         SlaveID: 1,
-        Timeout: 1 * time.Second,
+        MaxResponseMs: 1 * time.Second,
     }
     
     client, err := modbus.NewTCPClient(config)
@@ -116,7 +118,7 @@ func main() {
         StopBits: 1,
         Parity:   "N",
         SlaveID:  1,
-        Timeout:  1 * time.Second,
+        MaxResponseMs:  1 * time.Second,
     }
     
     client, err := modbus.NewRTUClient(config)
@@ -239,7 +241,7 @@ type Client interface {
     IsConnected() bool
     
     // 配置
-    SetTimeout(timeout time.Duration)
+    SetMaxResponseMs(maxResponseMs time.Duration)
     SetSlaveID(slaveID byte)
 }
 ```
@@ -313,7 +315,7 @@ type RTUConfig struct {
     StopBits    int           // 停止位: 1 或 2
     Parity      string        // 校验位: "N" (无), "E" (偶), "O" (奇)
     SlaveID     byte          // 从站地址: 1-247
-    Timeout     time.Duration // 超时时间，默认 1s
+    MaxResponseMs     time.Duration // 超时时间，默认 1s
     MinInterval time.Duration // 最小请求间隔，默认 10ms
     Debug       bool          // 启用调试日志
 }
@@ -326,7 +328,7 @@ type TCPConfig struct {
     Host    string        // 服务器地址，如 "192.168.1.100"
     Port    int           // 端口号，默认 502
     SlaveID byte          // 单元标识符: 0-255
-    Timeout time.Duration // 超时时间，默认 1s
+    MaxResponseMs time.Duration // 超时时间，默认 1s
     Debug   bool          // 启用调试日志
 }
 ```
@@ -429,8 +431,8 @@ python3 test_client.py
 
 ## 📖 文档
 
-- [DESIGN.md](DESIGN.md) - 完整设计文档和测试结果
-- [FILERECORD_TEST_GUIDE.md](FILERECORD_TEST_GUIDE.md) - FileRecord 功能测试指南
+- [docs/DESIGN.md](docs/DESIGN.md) - 完整设计文档和测试结果
+- [docs/FILERECORD_TEST_GUIDE.md](docs/FILERECORD_TEST_GUIDE.md) - FileRecord 功能测试指南
 - [tools/modbus_slave_full/README.md](tools/modbus_slave_full/README.md) - 测试服务器文档
 - [tools/modbus_slave_full/STRING_OPERATIONS_GUIDE.md](tools/modbus_slave_full/STRING_OPERATIONS_GUIDE.md) - 字符串操作指南
 - [tools/modbus_slave_full/FILE_RECORDS_GUIDE.md](tools/modbus_slave_full/FILE_RECORDS_GUIDE.md) - 文件记录功能指南
@@ -450,7 +452,7 @@ modbus_go_full/
 ├── modbus.go                    # 公共接口定义
 ├── go.mod                       # Go 模块定义
 ├── README.md                    # 本文档
-├── DESIGN.md                    # 设计文档
+├── docs/DESIGN.md                    # 设计文档
 └── tools/                       # 配套工具
     ├── modbus_poll_full/        # Go 客户端测试工具
     │   ├── comprehensive_example.go  # 综合测试程序

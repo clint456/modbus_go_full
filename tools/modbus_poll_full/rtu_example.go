@@ -18,7 +18,7 @@ func main() {
 		StopBits:    1,
 		Parity:      "N",
 		SlaveID:     1,
-		Timeout:     1 * time.Second,
+		MaxResponseMs:     1 * time.Second,
 		MinInterval: 10 * time.Millisecond,
 		Debug:       true,
 	}

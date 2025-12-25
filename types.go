@@ -14,11 +14,11 @@ type RTUConfig struct {
 	Parity   string // 校验位："N"(None), "E"(Even), "O"(Odd)
 
 	// Modbus 配置
-	SlaveID byte          // 从站地址：1-247
-	Timeout time.Duration // 超时时间，默认 1 秒
+	SlaveID byte // 从站地址：1-247
 
 	// 高级配置
-	MinInterval time.Duration // 最小请求间隔，默认 10ms
+	MaxResponseMs time.Duration // 最大响应超时时间，默认1000ms
+	MinInterval   time.Duration // 最小请求间隔，默认 10ms
 
 	// 调试选项
 	Debug bool // 是否启用调试日志
@@ -31,8 +31,11 @@ type TCPConfig struct {
 	Port int    // 端口，默认 502
 
 	// Modbus 配置
-	SlaveID byte          // 从站地址（Unit ID）：0-255
-	Timeout time.Duration // 超时时间，默认 1 秒
+	SlaveID byte // 从站地址（Unit ID）：0-255
+
+	// 高级配置
+	MaxResponseMs time.Duration // 最大响应超时时间，默认1000ms
+	MinInterval   time.Duration // 最小请求间隔，默认 10ms
 
 	// 连接池配置
 	MaxIdleConns    int           // 最大空闲连接数
@@ -46,25 +49,27 @@ type TCPConfig struct {
 // DefaultRTUConfig 返回默认 RTU 配置
 func DefaultRTUConfig(portName string, slaveID byte) *RTUConfig {
 	return &RTUConfig{
-		PortName:    portName,
-		BaudRate:    9600,
-		DataBits:    8,
-		StopBits:    1,
-		Parity:      "N",
-		SlaveID:     slaveID,
-		Timeout:     1 * time.Second,
-		MinInterval: 10 * time.Millisecond,
-		Debug:       false,
+		PortName:      portName,
+		BaudRate:      9600,
+		DataBits:      8,
+		StopBits:      1,
+		Parity:        "N",
+		SlaveID:       slaveID,
+		MaxResponseMs: 1000 * time.Millisecond,
+		MinInterval:   1 * time.Millisecond,
+		Debug:         false,
 	}
 }
 
 // DefaultTCPConfig 返回默认 TCP 配置
 func DefaultTCPConfig(host string, slaveID byte) *TCPConfig {
 	return &TCPConfig{
-		Host:            host,
-		Port:            502,
-		SlaveID:         slaveID,
-		Timeout:         1 * time.Second,
+		Host:          host,
+		Port:          502,
+		SlaveID:       slaveID,
+		MaxResponseMs: 1000 * time.Millisecond,
+		// TODO
+		MinInterval:     10 * time.Millisecond,
 		MaxIdleConns:    2,
 		MaxOpenConns:    5,
 		ConnMaxLifetime: 30 * time.Minute,

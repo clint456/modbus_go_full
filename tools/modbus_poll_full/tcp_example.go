@@ -14,7 +14,7 @@ func main() {
 		Host:    "192.168.68.50",
 		Port:    502,
 		SlaveID: 1,
-		Timeout: 1 * time.Second,
+		MaxResponseMs: 1 * time.Second,
 		Debug:   true,
 	}
 

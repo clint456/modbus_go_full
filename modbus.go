@@ -1,7 +1,7 @@
 // Package modbus provides a pure Go implementation of Modbus protocol
 // supporting both RTU and TCP modes without requiring RS485 ioctl.
 //
-// This package is designed to work with USB-to-Serial converters (like CH340)
+// This package is docs/DESIGNed to work with USB-to-Serial converters (like CH340)
 // that handle RS485 direction control in hardware.
 package modbus
 
@@ -37,7 +37,7 @@ type Client interface {
 	IsConnected() bool
 
 	// 配置
-	SetTimeout(timeout time.Duration)
+	SetMaxResponseMs(maxResponseMs time.Duration)
 	SetSlaveID(slaveID byte)
 }
 

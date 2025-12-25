@@ -67,7 +67,7 @@ type Client interface {
     IsConnected() bool
     
     // 配置
-    SetTimeout(timeout time.Duration)
+    SetMaxResponseMs(maxResponseMs time.Duration)
     SetSlaveID(slaveID byte)
 }
 ```
@@ -219,8 +219,8 @@ func (c *RTUClient) extractValidResponse(data []byte, expectedFuncCode byte) []b
 
 ```go
 // 设置读写超时
-conn.SetWriteDeadline(time.Now().Add(timeout))
-conn.SetReadDeadline(time.Now().Add(timeout))
+conn.SetWriteDeadline(time.Now().Add(MaxResponseMs))
+conn.SetReadDeadline(time.Now().Add(MaxResponseMs))
 
 // 使用 io.ReadFull 确保完整读取
 io.ReadFull(conn, mbapHeader)  // 必须读满7字节
@@ -311,7 +311,7 @@ var (
     ErrResponseTooShort   = fmt.Errorf("response too short")
     ErrCRCCheckFailed     = fmt.Errorf("CRC check failed")
     ErrUnexpectedResponse = fmt.Errorf("unexpected response")
-    ErrTimeout            = fmt.Errorf("timeout")
+    ErrMaxResponseMsTimeOut            = fmt.Errorf("max respnnse(ms) timeout")
 )
 ```
 
@@ -337,7 +337,7 @@ func main() {
         Host:    "192.168.1.100",
         Port:    502,
         SlaveID: 1,
-        Timeout: 1 * time.Second,
+        MaxResponseMs: 1 * time.Second,
         Debug:   false,
     }
     
@@ -389,7 +389,7 @@ func main() {
         StopBits: 1,
         Parity:   "N",
         SlaveID:  1,
-        Timeout:  1 * time.Second,
+        MaxResponseMs:  1 * time.Second,
         Debug:    false,
     }
     
@@ -445,7 +445,7 @@ func main() {
 | 15 | ReadExceptionStatus | ✅ | ✅ | 读取异常状态 |
 | 16 | GetCommEventCounter | ✅ | ✅ | 获取事件计数 |
 | 17 | IsConnected | ✅ | ✅ | 连接状态检查 |
-| 18 | SetTimeout | ✅ | ✅ | 超时设置 |
+| 18 | SetMaxResponseMs | ✅ | ✅ | 超时设置 |
 
 ---
 

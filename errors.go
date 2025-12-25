@@ -64,5 +64,5 @@ var (
 	ErrResponseTooShort   = fmt.Errorf("response too short")
 	ErrCRCCheckFailed     = fmt.Errorf("CRC check failed")
 	ErrUnexpectedResponse = fmt.Errorf("unexpected response")
-	ErrTimeout            = fmt.Errorf("timeout")
+	ErrMaxResponseMsTimeOut = fmt.Errorf("max respnnse(ms) timeout")
 )

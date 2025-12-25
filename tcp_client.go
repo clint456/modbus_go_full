@@ -21,8 +21,8 @@ type TCPClient struct {
 
 // NewTCPClient 创建 TCP 客户端
 func NewTCPClient(config *TCPConfig) (*TCPClient, error) {
-	if config.Timeout == 0 {
-		config.Timeout = 1 * time.Second
+	if config.MaxResponseMs == 0 {
+		config.MaxResponseMs = 1000 * time.Millisecond
 	}
 
 	if config.Port == 0 {
@@ -48,7 +48,7 @@ func (c *TCPClient) Connect() error {
 
 	address := fmt.Sprintf("%s:%d", c.config.Host, c.config.Port)
 
-	conn, err := net.DialTimeout("tcp", address, c.config.Timeout)
+	conn, err := net.DialTimeout("tcp", address, c.config.MaxResponseMs)
 	if err != nil {
 		return fmt.Errorf("connect failed: %w", err)
 	}
@@ -90,9 +90,9 @@ func (c *TCPClient) IsConnected() bool {
 	return c.connected && c.conn != nil
 }
 
-// SetTimeout 设置超时
-func (c *TCPClient) SetTimeout(timeout time.Duration) {
-	c.config.Timeout = timeout
+// SetMaxResponseMs 设置超时
+func (c *TCPClient) SetMaxResponseMs(maxResponseMs time.Duration) {
+	c.config.MaxResponseMs = maxResponseMs
 }
 
 // SetSlaveID 设置从站地址（Unit ID）
@@ -134,7 +134,7 @@ func (c *TCPClient) transaction(pdu []byte) ([]byte, error) {
 	}
 
 	// 设置写超时
-	if err := c.conn.SetWriteDeadline(time.Now().Add(c.config.Timeout)); err != nil {
+	if err := c.conn.SetWriteDeadline(time.Now().Add(c.config.MaxResponseMs)); err != nil {
 		return nil, fmt.Errorf("set write deadline failed: %w", err)
 	}
 
@@ -150,7 +150,7 @@ func (c *TCPClient) transaction(pdu []byte) ([]byte, error) {
 	}
 
 	// 设置读超时
-	if err := c.conn.SetReadDeadline(time.Now().Add(c.config.Timeout)); err != nil {
+	if err := c.conn.SetReadDeadline(time.Now().Add(c.config.MaxResponseMs)); err != nil {
 		return nil, fmt.Errorf("set read deadline failed: %w", err)
 	}
 

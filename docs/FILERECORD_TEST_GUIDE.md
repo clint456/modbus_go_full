@@ -177,7 +177,7 @@ func main() {
         Host:    "127.0.0.1",  // 本地模拟器
         Port:    502,
         SlaveID: 1,
-        Timeout: 2 * time.Second,
+        MaxResponseMs: 2 * time.Second,
         Debug:   true,
     }
     

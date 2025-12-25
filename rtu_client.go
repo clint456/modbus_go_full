@@ -23,8 +23,8 @@ type RTUClient struct {
 
 // NewRTUClient 创建 RTU 客户端
 func NewRTUClient(config *RTUConfig) (*RTUClient, error) {
-	if config.Timeout == 0 {
-		config.Timeout = 1 * time.Second
+	if config.MaxResponseMs == 0 {
+		config.MaxResponseMs = 1000 * time.Millisecond
 	}
 
 	if config.MinInterval == 0 {
@@ -75,7 +75,7 @@ func (c *RTUClient) Connect() error {
 		Size:        byte(c.config.DataBits),
 		Parity:      parity,
 		StopBits:    stopBits,
-		ReadTimeout: c.config.Timeout,
+		ReadTimeout: c.config.MaxResponseMs,
 	}
 
 	port, err := serial.OpenPort(serialConfig)
@@ -121,9 +121,9 @@ func (c *RTUClient) IsConnected() bool {
 	return c.connected && c.port != nil
 }
 
-// SetTimeout 设置超时
-func (c *RTUClient) SetTimeout(timeout time.Duration) {
-	c.config.Timeout = timeout
+// SetMaxResponseMs 设置超时
+func (c *RTUClient) SetMaxResponseMs(maxResponseMs time.Duration) {
+	c.config.MaxResponseMs = maxResponseMs
 }
 
 // SetSlaveID 设置从站地址
@@ -173,7 +173,7 @@ func (c *RTUClient) transaction(request []byte) ([]byte, error) {
 	// 等待发送完成
 	txTime := time.Duration(len(requestWithCRC)*11*1000000/c.config.BaudRate) * time.Microsecond
 	time.Sleep(txTime + 2*time.Millisecond)
-	
+
 	// RS485回显处理：读取并丢弃发送的数据
 	echoBuffer := make([]byte, len(requestWithCRC))
 	echoDeadline := time.Now().Add(50 * time.Millisecond)
@@ -183,7 +183,7 @@ func (c *RTUClient) transaction(request []byte) ([]byte, error) {
 		if n > 0 {
 			totalEchoRead += n
 			if c.config.Debug {
-				log.Printf("[Modbus RTU] Echo discarded: % 02X (%d/%d bytes)", 
+				log.Printf("[Modbus RTU] Echo discarded: % 02X (%d/%d bytes)",
 					echoBuffer[:totalEchoRead], totalEchoRead, len(requestWithCRC))
 			}
 		}
@@ -225,7 +225,7 @@ func (c *RTUClient) transaction(request []byte) ([]byte, error) {
 func (c *RTUClient) readResponse(expectedFuncCode byte) ([]byte, error) {
 	buffer := make([]byte, 512)
 	totalRead := 0
-	deadline := time.Now().Add(c.config.Timeout)
+	deadline := time.Now().Add(c.config.MaxResponseMs) // 最大响应超时时间
 	lastReadTime := time.Now()
 
 	for time.Now().Before(deadline) {
@@ -262,7 +262,7 @@ func (c *RTUClient) readResponse(expectedFuncCode byte) ([]byte, error) {
 	}
 
 	if totalRead == 0 {
-		return nil, ErrTimeout
+		return nil, ErrMaxResponseMsTimeOut
 	}
 
 	return nil, fmt.Errorf("invalid response (%d bytes): % 02X", totalRead, buffer[:totalRead])

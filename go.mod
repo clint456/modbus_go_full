@@ -1,4 +1,4 @@
-module github.com/clint456/modbus
+module github.com/clint456/modbus_go_full_go_full
 
 go 1.25
 

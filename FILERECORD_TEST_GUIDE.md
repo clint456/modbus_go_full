@@ -168,7 +168,7 @@ import (
     "fmt"
     "log"
     "time"
-    "github.com/clint456/modbus"
+    "github.com/clint456/modbus_go_full"
 )
 
 func main() {

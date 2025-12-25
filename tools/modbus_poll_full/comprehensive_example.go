@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/clint456/modbus"
+	modbus "github.com/clint456/modbus_go_full_go_full"
 )
 
 // 测试结果

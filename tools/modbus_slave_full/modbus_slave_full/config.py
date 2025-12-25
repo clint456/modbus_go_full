@@ -24,7 +24,7 @@ class TCPConfig:
 class RTUConfig:
     """RTU 串口服务器配置。"""
 
-    enabled: bool = False
+    enabled: bool = True
     port: str = "/dev/ttyUSB0"
     baudrate: int = 9600
     bytesize: int = 8

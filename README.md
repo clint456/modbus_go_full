@@ -3,7 +3,7 @@
 [![Go Version](https://img.shields.io/badge/Go-1.18+-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Test Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](DESIGN.md)
-[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/clint456/modbus/releases)
+[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/clint456/modbus_go_full/releases)
 
 纯 Go 实现的 Modbus 协议库，支持 RTU 和 TCP 两种模式。无需 RS485 ioctl 系统调用，可与 USB 转串口适配器无缝配合。
 
@@ -39,7 +39,7 @@
 ## 📦 安装
 
 ```bash
-go get github.com/clint456/modbus
+go get github.com/clint456/modbus_go_full
 ```
 
 **依赖要求:**
@@ -57,7 +57,7 @@ import (
     "fmt"
     "log"
     "time"
-    "github.com/clint456/modbus"
+    "github.com/clint456/modbus_go_full"
 )
 
 func main() {
@@ -104,7 +104,7 @@ import (
     "fmt"
     "log"
     "time"
-    "github.com/clint456/modbus"
+    "github.com/clint456/modbus_go_full"
 )
 
 func main() {

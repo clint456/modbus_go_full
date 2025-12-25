@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/clint456/modbus"
+	modbus "github.com/clint456/modbus_go_full"
 )
 
 func main() {

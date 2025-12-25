@@ -16,6 +16,8 @@ services:
       - PYTHONUNBUFFERED=1
     networks:
       - modbus-network
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0
 
 networks:
   modbus-network:
